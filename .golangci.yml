@@ -1,6 +1,9 @@
 # Версия схемы конфигурации, отдельная от версии golangci-lint.
 version: "2"
 
+run:
+  relative-path-mode: gomod
+
 formatters:
   enable:
     # Единое оформление отступов, пробелов и пустых строк.
@@ -56,8 +59,10 @@ linters:
     # Проверяет точность, обоснование и необходимость подавлений nolint.
     - nolintlint
 
-    # Проверяет границы слоёв, запрещённые библиотеки и устаревшие импорты.
+    # Запрещает выбранные сторонние библиотеки и устаревшие импорты.
     - depguard
+    # Проверяет размещение сгенерированного кода через Ruleguard.
+    - gocritic
     # Запрещает перечисленные ниже функции с подсказкой о замене.
     - forbidigo
     # Предлагает стандартную библиотеку вместо доступных аналогов из x/exp.
@@ -84,7 +89,20 @@ linters:
     # Выбор подходящих функций для string и []byte без лишних преобразований.
     - mirror
 
+  exclusions:
+    generated: disable
+    paths:
+      - ^internal/generated/
+
   settings:
+    gocritic:
+      disable-all: true
+      enabled-checks: [ruleguard]
+      settings:
+        ruleguard:
+          rules: '${base-path}/tools/lint/rules.go'
+          failOn: all
+
     revive:
       # Список правил остаётся явным при обновлении линтера.
       enable-all-rules: false
@@ -215,74 +233,28 @@ linters:
             - pkg: "golang.org/x/net/context$"
               desc: Используй context из стандартной библиотеки.
 
-        # Путь модуля взят из go.mod. После gonew замени его и здесь.
-        # service/usecase и handler/api обозначают одни и те же слои.
-        domain-isolation:
+        grpc-isolation:
           list-mode: original
-          files: ["**/internal/domain/**"]
+          files:
+            - "**/internal/domain/**"
+            - "**/internal/service/**"
+            - "**/internal/usecase/**"
+            - "**/internal/repository/**"
           deny:
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/handler
-              desc: domain не зависит от транспортного слоя.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/api
-              desc: domain не зависит от транспортного слоя.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/service
-              desc: domain не зависит от прикладного слоя.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/usecase
-              desc: domain не зависит от прикладного слоя.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/repository
-              desc: domain не зависит от хранения данных.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/generated
-              desc: Сгенерированные типы не входят в domain.
             - pkg: google.golang.org/grpc
               desc: gRPC используется в транспортном слое.
+
+        database-isolation:
+          list-mode: original
+          files:
+            - "**/internal/domain/**"
+            - "**/internal/service/**"
+            - "**/internal/usecase/**"
+            - "**/internal/handler/**"
+            - "**/internal/api/**"
+          deny:
             - pkg: github.com/jackc/pgx
               desc: Драйвер БД используется в repository и инфраструктуре.
-
-        service-isolation:
-          list-mode: original
-          files: ["**/internal/service/**", "**/internal/usecase/**"]
-          deny:
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/handler
-              desc: Прикладной слой не зависит от транспортного.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/api
-              desc: Прикладной слой не зависит от транспортного.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/repository
-              desc: Прикладной слой работает через интерфейс потребителя.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/generated
-              desc: Прикладной слой работает с доменными типами.
-            - pkg: google.golang.org/grpc
-              desc: gRPC используется в транспортном слое.
-            - pkg: github.com/jackc/pgx
-              desc: Драйвер БД используется в repository и инфраструктуре.
-
-        handler-isolation:
-          list-mode: original
-          files: ["**/internal/handler/**", "**/internal/api/**"]
-          deny:
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/repository
-              desc: Транспортный слой вызывает прикладные операции.
-            - pkg: github.com/jackc/pgx
-              desc: Транспортный слой не обращается к БД напрямую.
-
-        repository-isolation:
-          list-mode: original
-          files: ["**/internal/repository/**"]
-          deny:
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/handler
-              desc: repository не зависит от транспортного слоя.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/api
-              desc: repository не зависит от транспортного слоя.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/service
-              desc: repository не зависит от прикладного слоя.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/usecase
-              desc: repository не зависит от прикладного слоя.
-            # Bob в internal/generated/bob доступен репозиториям.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/generated/api
-              desc: OpenAPI-типы используются в транспортном слое.
-            - pkg: github.com/hedgehog-pm/service-bolerplate/internal/generated/grpc
-              desc: gRPC-типы используются в транспортном слое.
-            - pkg: google.golang.org/grpc
-              desc: gRPC используется в транспортном слое.
 
     forbidigo:
       # Определяем пакет по типам, чтобы переименование импорта не обходило запрет.

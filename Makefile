@@ -2,18 +2,13 @@
 
 export PSQL_DSN ?= $(DATABASE_URL)
 
-lint: check-generated
+lint:
 	go tool golangci-lint config verify
 	go tool golangci-lint run
+	go run github.com/fe3dback/go-arch-lint@v1.19.0 check
 
 check-generated:
-	@files="$$(find . -type f -name '*.go' \
-		! -path './internal/generated/*' ! -path './vendor/*' ! -path './.git/*' \
-		-exec grep -lE '^// Code generated .* DO NOT EDIT\.$$' {} +)"; \
-	if [ -n "$$files" ]; then \
-		printf 'Generated Go files must be in internal/generated:\n%s\n' "$$files"; \
-		exit 1; \
-	fi
+	go tool golangci-lint run --enable-only gocritic
 
 fmt:
 	go tool golangci-lint fmt

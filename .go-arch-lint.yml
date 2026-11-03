@@ -1,0 +1,38 @@
+version: 3
+workdir: .
+
+allow:
+  depOnAnyVendor: true
+  deepScan: false
+  ignoreNotFoundComponents: true
+
+exclude:
+  - tools
+
+components:
+  main: { in: cmd/** }
+  domain: { in: internal/domain/** }
+  service: { in: [internal/service/**, internal/usecase/**] }
+  handler: { in: [internal/handler/**, internal/api/**] }
+  repository: { in: internal/repository/** }
+  storage: { in: internal/storage/** }
+  database: { in: internal/generated/bob/** }
+  contracts: { in: [internal/generated/api/**, internal/generated/grpc/**] }
+
+deps:
+  main:
+    anyProjectDeps: true
+  domain:
+    mayDependOn: [domain]
+  service:
+    mayDependOn: [domain, service]
+  handler:
+    mayDependOn: [domain, service, handler, contracts]
+  repository:
+    mayDependOn: [domain, repository, storage, database]
+  storage:
+    mayDependOn: [domain, storage]
+  database:
+    mayDependOn: [database]
+  contracts:
+    mayDependOn: [contracts]
