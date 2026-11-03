@@ -1,0 +1,14 @@
+# Bob генерирует Go-код для SQL-запросов с учётом схемы PostgreSQL.
+# Перед make generate примените миграции и укажите каталоги с .sql в psql.queries.
+# https://bob.stephenafamo.com/docs/code-generation/queries/
+no_tests: true
+type_system: database/sql
+plugins_preset: none
+types:
+  int32:
+    alias_of: int
+  int64:
+    alias_of: int
+psql:
+  driver: github.com/jackc/pgx/v5/stdlib
+  queries: []

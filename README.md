@@ -12,3 +12,7 @@ go run golang.org/x/tools/cmd/gonew@latest \
 
 perl -pi -e 's/service-bolerplate/my-service/g' my-service/.golangci.yml
 ```
+
+Если БД не нужна, удалите `cmd/migrate`, `migrations`, `bobgen.yaml`
+и настройки БД из `Makefile`. Удалите `bobgen-psql` из блока `tool` в `go.mod`
+и выполните `go mod tidy`.
