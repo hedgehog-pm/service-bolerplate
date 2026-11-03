@@ -1,5 +1,5 @@
 # Bob генерирует Go-код для SQL-запросов с учётом схемы PostgreSQL.
-# Перед make generate примените миграции и укажите каталоги с .sql в psql.queries.
+# Перед make generate примените миграции. Каталоги psql.queries должны лежать в internal/generated/bob.
 # https://bob.stephenafamo.com/docs/code-generation/queries/
 no_tests: true
 type_system: database/sql
